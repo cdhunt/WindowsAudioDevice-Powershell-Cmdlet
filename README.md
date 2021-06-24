@@ -11,13 +11,35 @@ Set volume and mute state of default audio device (playback/recording)
 
 
 ## Import Cmdlet to PowerShell
-Download <a href="https://github.com/frgnca/AudioDeviceCmdlets/releases/download/v3.0/AudioDeviceCmdlets.dll">AudioDeviceCmdlets.dll</a>
+Run the script below for a hands-free installation. This will get the latest dll asset, create the module directory and install the module.
 ```powershell
-New-Item "$($profile | split-path)\Modules\AudioDeviceCmdlets" -Type directory -Force
-Copy-Item "C:\Path\to\AudioDeviceCmdlets.dll" "$($profile | split-path)\Modules\AudioDeviceCmdlets\AudioDeviceCmdlets.dll"
-Set-Location "$($profile | Split-Path)\Modules\AudioDeviceCmdlets"
-Get-ChildItem | Unblock-File
-Import-Module AudioDeviceCmdlets
+# Setup
+# Checks if the module is installed, if not, will download from v3.0 release and install the module.
+function Get-LatestGitHubVersion {
+    $repo = "frgnca/AudioDeviceCmdlets"
+
+    $releases = "https://api.github.com/repos/$repo/releases"
+    $releases
+    [uri]$downloadURL = (Invoke-WebRequest $releases | ConvertFrom-Json)[0].assets[0].browser_download_url
+
+    return $downloadURL
+}
+if (!(get-module -name AudioDeviceCmdlets)) {
+    $modulePath = "$($profile | split-path)\Modules\AudioDeviceCmdlets"
+    $fileName = "AudioDeviceCmdlets.dll"
+    #dllURL = "https://github.com/frgnca/AudioDeviceCmdlets/releases/download/v3.0/AudioDeviceCmdlets.dll"
+    $dllURL = Get-LatestGitHubVersion
+    $dllDownloadPath = "$env:USERPROFILE\Downloads\$fileName"
+    $dllDestinationPath = "$modulePath\$fileName"
+    Invoke-WebRequest -Uri $dllURL -OutFile $dllDownloadPath
+    if (!(Test-Path $modulePath)) {
+        New-Item $modulePath -Type directory -Force
+    }
+    Copy-Item  $dllDownloadPath $dllDestinationPath
+    Set-Location $modulePath
+    Get-ChildItem | Unblock-File
+    Import-Module AudioDeviceCmdlets -force
+}
 ```
 
 
